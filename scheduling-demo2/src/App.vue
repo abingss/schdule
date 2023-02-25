@@ -36,6 +36,7 @@ import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 
 // 引入axios
 import axios from 'axios'
+import dayjs from 'dayjs'
 
 export default {
 	components: {
@@ -111,7 +112,7 @@ export default {
 				eventMouseLeave: this.handleMouseLeave, // 鼠标移除时，触发该回调
 				dateClick: this.handleDateClick, // 当用户单击日期或时间时,触发该回调，触发此回调，您必须加载interaction插件
 				eventDrop: this.handleEventDrop, // 拖动日程，触发该回调
-				eventResizeStop: this.handleEventResize
+				eventResize: this.handleEventResize
 			},
 			// 排班信息相关属性
 			// schedulingInfo: [
@@ -183,7 +184,7 @@ export default {
 		this.calendarApi = this.$refs.fullCalendar.getApi()
 		// this.calendarOptions.events = this.schedulingInfo
 		this.initSchedulingInfo()
-		console.log('更新了视图')
+		console.log('mounted')
 		// console.log('events', this.calendarOptions.events)
 	},
 	methods: {
@@ -209,7 +210,7 @@ export default {
 					})
 				})
 				this.calendarOptions.events = this.schedulingInfo
-				// console.log(this.schedulingInfo)
+				console.log(this.schedulingInfo)
 
 				// this.calendarOptions.events = this.schedulingInfo
 			})
@@ -227,10 +228,11 @@ export default {
 		// 拖动事件的回调
 		handleEventDrop(eventDropInfo) {
 			console.log('触发了拖动日程回调')
-			console.log(eventDropInfo)
+			// console.log(eventDropInfo)
 			const id = eventDropInfo.event.id
-			const newStart = eventDropInfo.event.start
-			const newEnd = eventDropInfo.event.end
+			const newStart = dayjs(eventDropInfo.event.start).format('YYYY-MM-DDTHH:mm:ss')
+			const newEnd = dayjs(eventDropInfo.event.end).format('YYYY-MM-DDTHH:mm:ss')
+			// const newEnd = eventDropInfo.event.end
 			// employeeId = eventDropInfo.event.employee
 			// 修改事件列表
 			this.schedulingInfo.forEach((event) => {
@@ -241,28 +243,50 @@ export default {
 				}
 			})
 			// console.log(this.updateEvent)
-			// 1.将修改完成后的列表发送给后台
-			// axios({
-			// 	method: 'put',
-			// 	url: 'http://localhost:8081/api/workingScheduling',
-			// 	data: JSON.stringify(this.updateEvent)
-			// }).then((result) => {
-			// 	console.log(result)
-			// })
-			// 2.重新渲染
+			// 将修改完成后的列表发送给后台（done）
+			axios({
+				method: 'put',
+				headers: { 'Content-Type': 'application/json' },
+				url: 'http://localhost:8081/api/workingScheduling',
+				data: JSON.stringify(this.updateEvent)
+			}).then((result) => {
+				console.log(result)
+			})
 		},
-		// 拖动修改事件时间的回调
+		// 修改事件时间的回调
 		handleEventResize(eventResizeInfo) {
-			console.log(eventResizeInfo)
-			// 修改事件列表
-			/* 			this.schedulingInfo.forEach((event) => {
-				if (event.id == eventResizeInfo.event.id) {
-					event.start = eventResizeInfo.event.start
-					event.end = eventResizeInfo.event.end
-				}
-			}) */
-			// 1.将修改完成后的列表发送给后台
-			// 2.重新渲染
+			// console.log('触发了修改日程时间的回调')
+			// console.log(eventResizeInfo)
+			const id = eventResizeInfo.event.id
+			const newStart = dayjs(eventResizeInfo.event.start).format('YYYY-MM-DDTHH:mm:ss')
+			const newEnd = dayjs(eventResizeInfo.event.end).format('YYYY-MM-DDTHH:mm:ss')
+			// 判断修改后的时间是否在2-4小时内
+			const timeDifference = (dayjs(newEnd) - dayjs(newStart)) / 1000 / 60 / 60
+			// console.log(timeDifference)
+			if (timeDifference < 2 || timeDifference > 4) {
+				alert('排班时间请控制在2——4小时之内！')
+				// 保持修改前的状态（不修改，直接重新渲染——找到更好的方法替换）
+				this.initSchedulingInfo()
+			} else {
+				// 修改事件列表
+				this.schedulingInfo.forEach((event) => {
+					if (event.id == id) {
+						event.start = newStart
+						event.end = newEnd
+						this.updateEvent = event
+					}
+				})
+				// console.log(this.updateEvent)
+				// 1.将修改完成后的列表发送给后台
+				axios({
+					method: 'put',
+					headers: { 'Content-Type': 'application/json' },
+					url: 'http://localhost:8081/api/workingScheduling',
+					data: JSON.stringify(this.updateEvent)
+				}).then((result) => {
+					console.log(result.statusText)
+				})
+			}
 		}
 	}
 }
