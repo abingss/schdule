@@ -34,6 +34,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 // import { Calendar } from '@fullcalendar/core'
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid'
 
+// 引入axios
 import axios from 'axios'
 
 export default {
@@ -44,9 +45,9 @@ export default {
 		return {
 			calendarApi: null,
 			calendarOptions: {
-				plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, resourceTimeGridPlugin],
-				// plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, resourceTimeGridPlugin], // 需要用哪个插件引入后放到这个数组里
-				initialDate: new Date(), // 日历第一次加载时显示的初始日期。可以解析为Date的任何职包括ISO8601日期字符串，例如"2014-02-01"。
+				plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin, resourceTimeGridPlugin], // 需要用哪个插件引入后放到这个数组里
+				initialDate: '2023-05-10',
+				// initialDate: new Date(), // 日历第一次加载时显示的初始日期。可以解析为Date的任何职包括ISO8601日期字符串，例如"2014-02-01"。
 				initialView: 'dayGridMonth', // 日历加载时的初始视图，默认值为'dayGridMonth'，可以为任何可用视图的值，如例如'dayGridWeek'，'timeGridDay'，'listWeek'
 				headerToolbar: {
 					// 在日历顶部定义按钮和标题。将headerToolbar选项设置为false不会显示任何标题工具栏。可以为对象提供属性start/center/end或left/center/right。这些属性包含带有逗号/空格分隔值的字符串。用逗号分隔的值将相邻显示。用空格分隔的值之间会显示一个很小的间隙。
@@ -108,56 +109,69 @@ export default {
 				eventClick: this.handleDateClick, // 点击事件时，触发该回调
 				eventMouseEnter: this.handleMouseEnter, // 鼠标悬停在事件上时，触发该回调
 				eventMouseLeave: this.handleMouseLeave, // 鼠标移除时，触发该回调
+				dateClick: this.handleDateClick, // 当用户单击日期或时间时,触发该回调，触发此回调，您必须加载interaction插件
 				eventDrop: this.handleEventDrop, // 拖动日程，触发该回调
-				dateClick: this.handleDateClick // 当用户单击日期或时间时,触发该回调，触发此回调，您必须加载interaction插件
+				eventResizeStop: this.handleEventResize
 			},
 			// 排班信息相关属性
-			schedulingInfo: [
-				// 将在日历上显示的事件对象， events 可以是数组、json、函数。具体可以查看官方文档
-				{
-					// 员工id、门店id、班次起止时间、
-					title: 'event1',
-					id: 1,
-					start: '2023-02-14 08:00:00',
-					end: '2023-02-14 14:00:00', // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
-					backgroundColor: '#FDEBC9', // 该事件的背景颜色
-					borderColor: '#FDEBC9', // 该事件的边框颜色
-					textColor: '#F9AE26' // 该事件的文字颜色
-				},
-				// 添加事件的表单
-				{
-					// 员工id、门店id、班次起止时间、
-					title: 'event2',
-					id: 2,
-					start: '2023-02-14 09:00:00',
-					end: '2023-02-14 15:00:00' // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
-				},
-				{
-					// 员工id、门店id、班次起止时间、
-					title: 'event3',
-					id: 3,
-					start: '2023-02-14 10:00:00',
-					end: '2023-02-14 16:00:00', // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
-					backgroundColor: '#FDEBC9', // 该事件的背景颜色
-					borderColor: '#FDEBC9', // 该事件的边框颜色
-					textColor: '#F9AE26' // 该事件的文字颜色
-				},
-				{
-					// 员工id、门店id、班次起止时间、
-					title: 'event4',
-					id: 4,
-					start: '2023-02-15 09:00:00',
-					end: '2023-02-15 15:00:00' // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
-				},
-				{
-					title: 'test',
-					id: 5,
-					employeName: '张三',
-					position: 0,
-					start: '2023-02-16 10:00:00',
-					end: '2023-02-16 14:00:00'
-				}
-			],
+			// schedulingInfo: [
+			// 	// 将在日历上显示的事件对象， events 可以是数组、json、函数。具体可以查看官方文档
+			// 	{
+			// 		// 员工id、门店id、班次起止时间、
+			// 		title: 'event1',
+			// 		id: '1',
+			// 		start: '2023-02-14 08:00:00',
+			// 		end: '2023-02-14 14:00:00', // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
+			// 		backgroundColor: '#FDEBC9', // 该事件的背景颜色
+			// 		borderColor: '#FDEBC9', // 该事件的边框颜色
+			// 		textColor: '#F9AE26' // 该事件的文字颜色
+			// 	},
+			// 	// 添加事件的表单
+			// 	{
+			// 		// 员工id、门店id、班次起止时间、
+			// 		title: 'event2',
+			// 		id: '2',
+			// 		start: '2023-02-14 09:00:00',
+			// 		end: '2023-02-14 15:00:00' // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
+			// 	},
+			// 	{
+			// 		// 员工id、门店id、班次起止时间、
+			// 		title: 'event3',
+			// 		id: '3',
+			// 		start: '2023-02-14 10:00:00',
+			// 		end: '2023-02-14 16:00:00', // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
+			// 		backgroundColor: '#FDEBC9', // 该事件的背景颜色
+			// 		borderColor: '#FDEBC9', // 该事件的边框颜色
+			// 		textColor: '#F9AE26' // 该事件的文字颜色
+			// 	},
+			// 	{
+			// 		// 员工id、门店id、班次起止时间、
+			// 		title: 'event4',
+			// 		id: '4',
+			// 		start: '2023-02-15 09:00:00',
+			// 		end: '2023-02-15 15:00:00' // 这里要注意，end为可选参数，无end参数时该事件仅在当天展示
+			// 	},
+			// 	{
+			// 		title: 'test',
+			// 		id: '5',
+			// 		employeName: '张三',
+			// 		position: 0,
+			// 		start: '2023-02-16 10:00:00',
+			// 		end: '2023-02-16 14:00:00'
+			// 	},
+			// 	{
+			// 		title: 'test',
+			// 		id: '6',
+			// 		employeName: '张三',
+			// 		position: 0,
+			// 		start: '2023-02-25 10:00:00',
+			// 		end: '2023-02-25 14:00:00'
+			// 	}
+			// ],
+			schedulingInfo: [],
+			// 用于存储更新的排班，以备发送给后端
+			updateEvent: {},
+			// tempSchedulingInfo: [],
 			// 添加事件的对话框表单
 			dialogFormVisible: false,
 			form: {}
@@ -167,32 +181,88 @@ export default {
 		// 这里有两点要注意，想要调用插件的方法，要在组件上设置ref
 		// 并且在组件未加载的时候this.$refs中是没有fullCalendar的，所以未加载的时候调用方法会报错
 		this.calendarApi = this.$refs.fullCalendar.getApi()
-		this.calendarOptions.events = this.schedulingInfo
+		// this.calendarOptions.events = this.schedulingInfo
 		this.initSchedulingInfo()
+		console.log('更新了视图')
+		// console.log('events', this.calendarOptions.events)
 	},
 	methods: {
 		// 从后台获取当前排表信息
-		async initSchedulingInfo() {
-			console.log('获取排班信息')
-			let result = await axios({
-				url: 'xxx',
-				methods: 'get'
+		initSchedulingInfo() {
+			// console.log('收到后端的数据')]
+			axios({
+				url: 'http://localhost:8081/api/workingScheduling/test?',
+				method: 'get',
+				params: {
+					dateStr: '2023-05-10'
+				}
+			}).then((res) => {
+				const data = res.data.data // 后台返回的排班信息
+				// console.log(data)
+				this.schedulingInfo = data
+				this.schedulingInfo.forEach((event) => {
+					Object.defineProperty(event, 'title', {
+						value: event.employee.employeeName,
+						enumerable: true,
+						configurable: false,
+						writable: true
+					})
+				})
+				this.calendarOptions.events = this.schedulingInfo
+				// console.log(this.schedulingInfo)
+
+				// this.calendarOptions.events = this.schedulingInfo
 			})
-			this.schedulingInfo = result
 		},
 		handleDateClick(dateClickInfo) {
-			console.log(dateClickInfo)
+			// console.log(dateClickInfo)
 		},
 		handleMouseEnter(mouseEnterInfo) {
-			console.log(mouseEnterInfo.event.startStr)
+			// console.log(mouseEnterInfo.event.startStr)
 			// 提示:mouseEnterInfo.event.startStr 可以获取当前事件的开始事件
 		},
 		handleMouseLeave(mouseEnterInfo) {
-			console.log(mouseEnterInfo)
+			// console.log(mouseEnterInfo)
 		},
+		// 拖动事件的回调
 		handleEventDrop(eventDropInfo) {
 			console.log('触发了拖动日程回调')
 			console.log(eventDropInfo)
+			const id = eventDropInfo.event.id
+			const newStart = eventDropInfo.event.start
+			const newEnd = eventDropInfo.event.end
+			// employeeId = eventDropInfo.event.employee
+			// 修改事件列表
+			this.schedulingInfo.forEach((event) => {
+				if (event.id == id) {
+					event.start = newStart
+					event.end = newEnd
+					this.updateEvent = event
+				}
+			})
+			// console.log(this.updateEvent)
+			// 1.将修改完成后的列表发送给后台
+			// axios({
+			// 	method: 'put',
+			// 	url: 'http://localhost:8081/api/workingScheduling',
+			// 	data: JSON.stringify(this.updateEvent)
+			// }).then((result) => {
+			// 	console.log(result)
+			// })
+			// 2.重新渲染
+		},
+		// 拖动修改事件时间的回调
+		handleEventResize(eventResizeInfo) {
+			console.log(eventResizeInfo)
+			// 修改事件列表
+			/* 			this.schedulingInfo.forEach((event) => {
+				if (event.id == eventResizeInfo.event.id) {
+					event.start = eventResizeInfo.event.start
+					event.end = eventResizeInfo.event.end
+				}
+			}) */
+			// 1.将修改完成后的列表发送给后台
+			// 2.重新渲染
 		}
 	}
 }
